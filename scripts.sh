@@ -38,8 +38,7 @@ function SSHSwitch() {
     echo "[usage] ssh-switch <profile>"
     return 1
   fi
-  ls ~/.ssh/$1 &> /dev/null && SSHSwitchIsValidProfile="true"
-  if [ -z "$SSHSwitchIsValidProfile" ]; then
+  if [ ! -f ~/.ssh/$1/id_rsa ]; then
     echo "No profile \"$1\" exists"
     return 2
   fi
