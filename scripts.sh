@@ -1,6 +1,10 @@
 
 function SSHWhich() {
-  echo "Active key: \"$(cat ~/.ssh/.active)\""
+  if [ ! -f ~/.ssh/.active ]; then
+    echo "No active key yet"
+  else
+    echo "Active key: \"$(cat ~/.ssh/.active)\""
+  fi
 }
 
 function SSHInit() {
@@ -17,12 +21,16 @@ function SSHInit() {
 }
 
 function SSHStash() {
-  active=$(cat ~/.ssh/.active) &> /dev/null
-  mkdir -p ~/.ssh/$active &> /dev/null
-  cp -f ~/.ssh/id_rsa* ~/.ssh/$active/ &> /dev/null
-  cp -f ~/.ssh/known_hosts ~/.ssh/$active/ &> /dev/null
-  cp -f ~/.gitconfig ~/.ssh/$active/ &> /dev/null
-  echo "SSH key stashed to \"$active\""
+  if [ ! -f ~/.ssh/.active ]; then
+    echo "No active key to stash"
+  else
+    active=$(cat ~/.ssh/.active) &> /dev/null
+    mkdir -p ~/.ssh/$active &> /dev/null
+    cp -f ~/.ssh/id_rsa* ~/.ssh/$active/ &> /dev/null
+    cp -f ~/.ssh/known_hosts ~/.ssh/$active/ &> /dev/null
+    cp -f ~/.gitconfig ~/.ssh/$active/ &> /dev/null
+    echo "SSH key stashed to \"$active\""
+  fi
 }
 
 function SSHSwitch() {
