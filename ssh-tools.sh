@@ -1,5 +1,5 @@
 
-function SSHWhich() {
+function ssh-which() {
   if [ ! -f ~/.ssh/.active ]; then
     echo "No active key yet"
   else
@@ -7,50 +7,68 @@ function SSHWhich() {
   fi
 }
 
-function SSHInit() {
-  if [ -z "$3" ]; then
-    echo "[usage] ssh-init <profile> <email> \"<username>\""
+function ssh-list() {
+  current=$(pwd)
+  echo "Existing profiles:"
+  cd ~/.ssh
+  find * -type d
+  cd $current
+}
+
+function ssh-create() {
+  if [ $# -lt 3 ]; then
+    echo "[usage] ssh-create <profile> <email> \"<username>\""
     return 1
   fi
-  echo "Generating new key for \"$1\""
-  rm -rf ~/.ssh/$1 &> /dev/null
-  mkdir -p ~/.ssh/$1 &> /dev/null
-  ssh-keygen -t rsa -b 4096 -C "$2" -N '' -f ~/.ssh/$1/id_rsa &> /dev/null
-  printf "[user]\n\temail = $2\n\tname = $3\n" > ~/.ssh/$1/.gitconfig &> /dev/null
-  printf "Files created:\n$(ls -a ~/.ssh/$1 | grep -v '^[\.]*$')\n"
+  profile=$1
+  email=$2
+  username=$3
+
+  echo "Generating new key for \"$profile\""
+  rm -rf ~/.ssh/$profile &> /dev/null
+  mkdir -p ~/.ssh/$profile &> /dev/null
+  ssh-keygen -q -b 4096 -t rsa -f ~/.ssh/$profile/id_rsa -C "$email" -N ''
+  printf "[user]\n\temail = $email\n\tname = $username\n" > ~/.ssh/$profile/.gitconfig &> /dev/null
+
+  printf "Files created:\n$(ls -p -a ~/.ssh/$profile | grep -v / | grep -v '^[\.]*/$')\n"
 }
 
-function SSHStash() {
+function ssh-stash() {
+  if [ $# -ge 1 ]; then
+    profile=$1
+    echo $profile > ~/.ssh/.active &> /dev/null
+  fi
+
   if [ ! -f ~/.ssh/.active ]; then
     echo "No active key to stash"
-  else
-    active=$(cat ~/.ssh/.active) &> /dev/null
-    mkdir -p ~/.ssh/$active &> /dev/null
-    cp -f ~/.ssh/id_rsa* ~/.ssh/$active/ &> /dev/null
-    cp -f ~/.ssh/known_hosts ~/.ssh/$active/ &> /dev/null
-    cp -f ~/.gitconfig ~/.ssh/$active/ &> /dev/null
-    echo "SSH key stashed to \"$active\""
+    return 1
   fi
+
+  active=$(cat ~/.ssh/.active)
+  mkdir -p ~/.ssh/$active &> /dev/null
+  cp -f ~/.ssh/id_rsa* ~/.ssh/$active/ &> /dev/null
+  cp -f ~/.ssh/known_hosts ~/.ssh/$active/ &> /dev/null
+  cp -f ~/.gitconfig ~/.ssh/$active/ &> /dev/null
+
+  echo "SSH key stashed to \"$active\""
 }
 
-function SSHSwitch() {
-  if [ -z "$1" ]; then
+function ssh-switch() {
+  if [ $# -lt 1 ]; then
     echo "[usage] ssh-switch <profile>"
     return 1
   fi
-  if [ ! -f ~/.ssh/$1/id_rsa ]; then
-    echo "No profile \"$1\" exists"
+  profile=$1
+
+  if [ ! -f ~/.ssh/$profile/id_rsa ]; then
+    echo "No profile \"$profile\" exists"
     return 2
   fi
-  SSHStash
-  cp -f ~/.ssh/$1/.gitconfig ~/ &> /dev/null
-  cp -f ~/.ssh/$1/id_rsa* ~/.ssh &> /dev/null
-  cp -f ~/.ssh/$1/known_hosts ~/.ssh &> /dev/null
-  echo $1 > ~/.ssh/.active
-  SSHWhich
-}
 
-alias ssh-init="SSHInit"
-alias ssh-switch="SSHSwitch"
-alias ssh-stash="SSHStash"
-alias ssh-which="SSHWhich"
+  ssh-stash
+  cp -f ~/.ssh/$profile/.gitconfig ~/ &> /dev/null
+  cp -f ~/.ssh/$profile/id_rsa* ~/.ssh &> /dev/null
+  cp -f ~/.ssh/$profile/known_hosts ~/.ssh &> /dev/null
+  echo $profile > ~/.ssh/.active &> /dev/null
+  ssh-which
+}
