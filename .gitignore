@@ -2,3 +2,4 @@
 !.gitignore
 !README.md
 !ssh-tools.sh
+!ssh-tools.ps1
